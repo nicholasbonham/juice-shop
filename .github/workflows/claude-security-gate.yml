@@ -104,7 +104,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event.pull_request.number }}
+          use_sticky_comment: true
           prompt: |
             You are a security gate for this pull request on ${{ github.repository }}.
 
