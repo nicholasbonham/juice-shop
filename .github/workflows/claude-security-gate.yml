@@ -103,6 +103,8 @@ jobs:
           GHAS_LOW: ${{ steps.ghas.outputs.LOW }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_sticky_comment: true
           prompt: |
             You are a security gate for this pull request on ${{ github.repository }}.
 
@@ -131,6 +133,34 @@ jobs:
                - A findings table (severity | rule | file:line | risk summary)
                - A "What to fix" section for any blocking findings
                - A "Warnings" section for Medium/Low findings
-            5. If the verdict is BLOCKED, exit with a non-zero status code so
-               the check fails and merge is prevented.
-            6. If the verdict is APPROVED, exit 0.
+             5. Write your verdict to /tmp/gate-verdict.txt as a single word: either BLOCKED or APPROVED
+      
+      - name: Enforce gate verdict
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking Claude's PR comment for verdict..."
+          
+          # Wait a moment for the comment to be posted
+          sleep 10
+          
+          # Fetch the most recent comment from the Claude action (bot comments)
+          VERDICT=$(gh api \
+            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '[.[] | select(.user.type == "Bot")] | last | .body' \
+            | grep -o "Security gate: BLOCKED\|Security gate: APPROVED" \
+            | head -1)
+          
+          echo "Parsed verdict: $VERDICT"
+          
+          if [ -z "$VERDICT" ]; then
+            echo "Could not parse verdict from Claude's comment — failing safe"
+            exit 1
+          elif echo "$VERDICT" | grep -q "BLOCKED"; then
+            echo "Security gate BLOCKED this PR"
+            exit 1
+          else
+            echo "Security gate APPROVED this PR"
+            exit 0
+          fi
+                       
