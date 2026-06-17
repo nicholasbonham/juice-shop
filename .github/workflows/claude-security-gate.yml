@@ -136,19 +136,31 @@ jobs:
              5. Write your verdict to /tmp/gate-verdict.txt as a single word: either BLOCKED or APPROVED
       
       - name: Enforce gate verdict
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f /tmp/gate-verdict.txt ]; then
-            VERDICT=$(cat /tmp/gate-verdict.txt | tr -d '[:space:]')
-            echo "Gate verdict: $VERDICT"
-            if [ "$VERDICT" = "BLOCKED" ]; then
-              echo "Security gate BLOCKED this PR — failing the check"
-              exit 1
-            else
-              echo "Security gate APPROVED this PR"
-              exit 0
-            fi
-          else
-            echo "No verdict file found — Claude may not have completed correctly"
+          echo "Checking Claude's PR comment for verdict..."
+          
+          # Wait a moment for the comment to be posted
+          sleep 10
+          
+          # Fetch the most recent comment from the Claude action (bot comments)
+          VERDICT=$(gh api \
+            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '[.[] | select(.user.type == "Bot")] | last | .body' \
+            | grep -o "Security gate: BLOCKED\|Security gate: APPROVED" \
+            | head -1)
+          
+          echo "Parsed verdict: $VERDICT"
+          
+          if [ -z "$VERDICT" ]; then
+            echo "Could not parse verdict from Claude's comment — failing safe"
             exit 1
+          elif echo "$VERDICT" | grep -q "BLOCKED"; then
+            echo "Security gate BLOCKED this PR"
+            exit 1
+          else
+            echo "Security gate APPROVED this PR"
+            exit 0
           fi
-                 
+                       
