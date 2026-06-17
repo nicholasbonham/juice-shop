@@ -235,6 +235,8 @@ The OWASP Juice Shop Project Leaders are:
 For a list of all contributors to the OWASP Juice Shop please visit our
 [HALL_OF_FAME.md](HALL_OF_FAME.md).
 
+# test
+
 ## Licensing
 
 [![license](https://img.shields.io/github/license/juice-shop/juice-shop.svg)](LICENSE)
