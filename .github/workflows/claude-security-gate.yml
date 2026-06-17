@@ -13,6 +13,7 @@ jobs:
       contents: read
       pull-requests: write
       security-events: read  # required to query GHAS alerts
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
