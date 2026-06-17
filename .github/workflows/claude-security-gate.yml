@@ -57,7 +57,7 @@ jobs:
 
           # Fetch open Critical and High alerts on this branch
           gh api \
-            "repos/${REPO}/code-scanning/alerts?ref=${BRANCH}&state=open&per_page=100" \
+            "repos/${REPO}/code-scanning/alerts?ref=refs/heads/${BRANCH}&state=open&per_page=100" \
             > /tmp/all-alerts.json
 
           # Summarise counts by severity for the prompt
