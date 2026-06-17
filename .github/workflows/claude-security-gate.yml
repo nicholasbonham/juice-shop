@@ -60,6 +60,18 @@ jobs:
             "repos/${REPO}/code-scanning/alerts?ref=refs/heads/${BRANCH}&state=open&per_page=100" \
             > /tmp/all-alerts.json
 
+          echo "=== Trying branch name only ==="
+          gh api "repos/${REPO}/code-scanning/alerts?ref=${BRANCH}&state=open&per_page=100" | jq 'length'
+
+          echo "=== Trying refs/heads/ prefix ==="
+          gh api "repos/${REPO}/code-scanning/alerts?ref=refs/heads/${BRANCH}&state=open&per_page=100" | jq 'length'
+      
+          echo "=== Trying no ref filter (all alerts) ==="
+          gh api "repos/${REPO}/code-scanning/alerts?state=open&per_page=100" | jq 'length'
+      
+          echo "=== Sample ref values from existing alerts ==="
+          gh api "repos/${REPO}/code-scanning/alerts?state=open&per_page=5" | jq '.[].most_recent_instance.ref'
+
           # Summarise counts by severity for the prompt
           echo "CRITICAL=$(jq '[.[] | select(.rule.security_severity_level=="critical")] | length' /tmp/all-alerts.json)" >> $GITHUB_OUTPUT
           echo "HIGH=$(jq '[.[] | select(.rule.security_severity_level=="high")] | length' /tmp/all-alerts.json)" >> $GITHUB_OUTPUT
